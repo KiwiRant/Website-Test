@@ -1,9 +1,44 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Hello World</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Hello Website</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
+      transition: background-color 0.5s ease;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 18px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      background-color: #333;
+      color: white;
+    }
+    button:hover {
+      background-color: #555;
+    }
+  </style>
 </head>
 <body>
-  <h1>My Site on GitHub + Cloudflare 🚀</h1>
+  <h1>Hello</h1>
+  <button onclick="changeBackground()">Change Background</button>
+
+  <script>
+    function changeBackground() {
+      const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
+      document.body.style.backgroundColor = randomColor;
+    }
+  </script>
 </body>
 </html>
