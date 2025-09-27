@@ -1,44 +1,526 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hello Website</title>
-  <style>
-    body {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background-color: #f0f0f0;
-      transition: background-color 0.5s ease;
-    }
-    button {
-      padding: 10px 20px;
-      font-size: 18px;
-      cursor: pointer;
-      border: none;
-      border-radius: 8px;
-      background-color: #333;
-      color: white;
-    }
-    button:hover {
-      background-color: #555;
-    }
-  </style>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Tabletop Hub — D&D Beyond & Maps</title>
+<style>
+  :root{
+    --accent:#6b7cff;
+    --bg:#0f1724;
+    --panel:#0b1220;
+    --muted:#94a3b8;
+    --glass: rgba(255,255,255,0.03);
+    color-scheme: dark;
+  }
+  html,body{height:100%;margin:0;background:linear-gradient(180deg,#071028 0%, #07111b 100%);font-family:Inter,system-ui,Segoe UI,Roboto,"Helvetica Neue",Arial;}
+  .app{display:flex;height:100vh;gap:14px;padding:14px;box-sizing:border-box}
+  .sidebar{width:360px;background:var(--panel);border-radius:10px;padding:12px;box-shadow:0 6px 30px rgba(2,6,23,0.6);overflow:auto}
+  .main{flex:1;background:var(--glass);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+  h2{margin:6px 0 12px 0;color:#e6eef8}
+  label{display:block;font-size:13px;color:var(--muted);margin:6px 0}
+  input[type="text"], input[type="url"], select{width:100%;padding:8px;border-radius:6px;border:1px solid rgba(255,255,255,0.04);background:transparent;color:#dbeafe}
+  button{background:var(--accent);color:white;border:none;padding:8px 10px;border-radius:8px;cursor:pointer;font-weight:600}
+  .muted{color:var(--muted);font-size:13px}
+  .char-list{display:flex;flex-direction:column;gap:8px}
+  .char-item{display:flex;gap:8px;align-items:center;padding:8px;background:linear-gradient(0deg, rgba(255,255,255,0.02), transparent);border-radius:8px}
+  .char-item small{color:var(--muted);display:block}
+  .iframe-wrap{height:240px;background:#000;border-radius:8px;overflow:hidden;border:1px solid rgba(255,255,255,0.03)}
+  .controls{display:flex;gap:8px;align-items:center}
+  /* Map area */
+  .map-toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .map-canvas-wrap{flex:1;background:#08101a;border-radius:8px;padding:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;position:relative}
+  canvas#mapCanvas{background:#0b1220;cursor:grab;border-radius:6px;max-width:100%;max-height:100%}
+  .token-list{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+  .token{display:flex;gap:6px;align-items:center;background:rgba(255,255,255,0.03);padding:6px;border-radius:6px}
+  .small{font-size:12px}
+  footer{display:flex;gap:8px;justify-content:flex-end}
+  .danger{background:#ff6b6b}
+  @media (max-width:1000px){
+    .sidebar{width:320px}
+  }
+  @media (max-width:740px){
+    .app{flex-direction:column}
+    .sidebar{width:auto}
+  }
+</style>
 </head>
 <body>
-  <h1>Hello</h1>
-  <button onclick="changeBackground()">Change Background</button>
+<div class="app">
+  <aside class="sidebar" aria-label="left">
+    <h2>Characters (D&D Beyond)</h2>
+    <p class="muted">Paste a D&D Beyond character/encounter URL and try to embed it. If the site blocks framing, click "Open" to open in new tab.</p>
 
-  <script>
-    function changeBackground() {
-      const randomColor = '#' + Math.floor(Math.random()*16777215).toString(16);
-      document.body.style.backgroundColor = randomColor;
+    <div style="margin-top:8px">
+      <label for="charName">Character name</label>
+      <input id="charName" type="text" placeholder="e.g. 'Lina Bright'" />
+      <label for="charUrl">Character or encounter URL</label>
+      <input id="charUrl" type="url" placeholder="https://www.dndbeyond.com/..." />
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <button id="addChar">Add character</button>
+        <button id="importExample" style="background:#223">Add example</button>
+      </div>
+    </div>
+
+    <hr style="margin:12px 0;border-color:rgba(255,255,255,0.03)">
+
+    <div class="char-list" id="charList" aria-live="polite"></div>
+
+    <hr style="margin:12px 0;border-color:rgba(255,255,255,0.03)">
+
+    <div>
+      <h2>Session Notes</h2>
+      <label for="notes">Notes (saved locally)</label>
+      <textarea id="notes" style="width:100%;min-height:120px;background:transparent;color:#dbeafe;border-radius:8px;padding:8px;border:1px solid rgba(255,255,255,0.03)"></textarea>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div style="display:flex;gap:12px;align-items:center;justify-content:space-between">
+      <h2>Map & Tools</h2>
+      <div class="map-toolbar">
+        <label class="small">Upload map <input id="mapFile" type="file" accept="image/*" style="display:none" /></label>
+        <button id="chooseMap">Choose map</button>
+        <button id="addTokenBtn">Add token</button>
+        <button id="toggleGrid">Toggle grid</button>
+        <button id="measureBtn">Ruler</button>
+        <button id="exportMap">Export PNG</button>
+      </div>
+    </div>
+
+    <div class="map-canvas-wrap">
+      <canvas id="mapCanvas" width="1200" height="800" aria-label="map canvas"></canvas>
+    </div>
+
+    <div style="display:flex;gap:12px;align-items:flex-start">
+      <div style="flex:1">
+        <h3 class="small">Tokens</h3>
+        <div class="token-list" id="tokenList"></div>
+      </div>
+      <div style="width:320px">
+        <h3 class="small">Preview / Embedded sheet</h3>
+        <div class="iframe-wrap" id="iframePreview">
+          <div id="iframeInner" style="padding:12px;color:var(--muted);font-size:13px">Select a character on the left to preview. If embed is blocked, open in a new tab.</div>
+        </div>
+      </div>
+    </div>
+
+    <footer>
+      <div class="muted small" style="margin-right:auto">Tabletop Hub prototype — local only (no server)</div>
+      <button id="clearAll" class="danger">Clear all (local)</button>
+    </footer>
+  </main>
+</div>
+
+<script>
+/*
+ Tabletop Hub — Prototype
+ - Characters are saved into localStorage as {name, url}
+ - Map supports image upload, tokens, pan/zoom, grid, simple ruler, export
+ - Many features are intentionally lightweight to be a portable starting point.
+*/
+
+// --- Storage helpers
+const STORAGE_KEY = 'tabletop_hub_v1';
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {characters:[], notes:'', map:null, tokens:[], grid:false};
+  }catch(e){ return {characters:[], notes:'', map:null, tokens:[], grid:false}; }
+}
+function saveState(state){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+let state = loadState();
+
+// --- Characters UI
+const charList = document.getElementById('charList');
+const charName = document.getElementById('charName');
+const charUrl = document.getElementById('charUrl');
+const addChar = document.getElementById('addChar');
+const importExample = document.getElementById('importExample');
+const iframeInner = document.getElementById('iframeInner');
+
+function renderCharacters(){
+  charList.innerHTML = '';
+  state.characters.forEach((c, i) => {
+    const el = document.createElement('div'); el.className = 'char-item';
+    const info = document.createElement('div'); info.style.flex='1';
+    info.innerHTML = `<strong style="color:#e6eef8">${escapeHtml(c.name || 'Unnamed')}</strong><br/><small>${escapeHtml(c.url)}</small>`;
+    const btnOpen = document.createElement('button'); btnOpen.textContent='Open'; btnOpen.onclick = ()=>window.open(c.url,'_blank');
+    const btnPreview = document.createElement('button'); btnPreview.textContent='Preview'; btnPreview.onclick = ()=>previewChar(i);
+    const btnRemove = document.createElement('button'); btnRemove.textContent='Remove'; btnRemove.onclick = ()=>{
+      state.characters.splice(i,1); saveState(state); renderCharacters(); clearPreviewIfNeeded(c.url);
+    };
+    el.appendChild(info); el.appendChild(btnPreview); el.appendChild(btnOpen); el.appendChild(btnRemove);
+    charList.appendChild(el);
+  });
+}
+function previewChar(idx){
+  const c = state.characters[idx];
+  // attempt to embed in an iframe; note many sites block this
+  iframeInner.innerHTML = '';
+  const ifr = document.createElement('iframe');
+  ifr.src = c.url;
+  ifr.style.width='100%'; ifr.style.height='100%'; ifr.style.border='0';
+  ifr.onload = ()=>{ /* works */ };
+  ifr.onerror = ()=>{ iframeInner.innerHTML = '<div class="muted small">Preview failed — site may block framing. Click Open on the character.</div>'; };
+  iframeInner.appendChild(ifr);
+}
+
+function clearPreviewIfNeeded(url){
+  // if the preview currently shows the removed URL, clear it
+  const ifr = iframeInner.querySelector('iframe');
+  if(ifr && ifr.src === url) iframeInner.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px">Select a character on the left to preview.</div>';
+}
+
+addChar.addEventListener('click', ()=>{
+  const name = charName.value.trim();
+  const url = charUrl.value.trim();
+  if(!url) return alert('Please paste the character / encounter URL from D&D Beyond.');
+  state.characters.push({name: name || url.split('/').pop(), url});
+  saveState(state);
+  charName.value=''; charUrl.value='';
+  renderCharacters();
+});
+importExample.addEventListener('click', ()=>{
+  state.characters.push({name:'Example NPC', url:'https://www.dndbeyond.com/characters/00000000/example'});
+  saveState(state); renderCharacters();
+});
+
+// notes
+const notesEl = document.getElementById('notes');
+notesEl.value = state.notes || '';
+notesEl.addEventListener('input', ()=>{
+  state.notes = notesEl.value; saveState(state);
+});
+
+// --- Map & Canvas
+const canvas = document.getElementById('mapCanvas');
+const ctx = canvas.getContext('2d');
+let mapImg = null;
+let mapScale = 1;
+let mapOffset = {x:0,y:0}; // pan
+let isPanning=false; let lastPan={x:0,y:0};
+let tokens = state.tokens || []; // {id,label,x,y,size,color}
+let draggingToken = null;
+let dragOffset = {x:0,y:0};
+let showGrid = !!state.grid;
+let measureMode = false;
+let measurePoints = [];
+
+const tokenListEl = document.getElementById('tokenList');
+
+function resizeCanvasToContainer(){
+  // Make canvas responsive: fit its parent
+  const wrap = canvas.parentElement;
+  const rect = wrap.getBoundingClientRect();
+  // keep aspect ratio near original 3:2-ish, but simply set to container
+  canvas.width = Math.max(600, Math.floor(rect.width - 16));
+  canvas.height = Math.max(400, Math.floor(rect.height - 16));
+  draw();
+}
+window.addEventListener('resize', resizeCanvasToContainer);
+
+function draw(){
+  // clear
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  // draw map image centered with pan/zoom
+  if(mapImg){
+    const iw = mapImg.width * mapScale;
+    const ih = mapImg.height * mapScale;
+    const x = mapOffset.x + (canvas.width - iw)/2;
+    const y = mapOffset.y + (canvas.height - ih)/2;
+    ctx.drawImage(mapImg, x, y, iw, ih);
+    ctx.save();
+    // grid overlay
+    if(showGrid){
+      const gridSize = 64 * mapScale; // 64 px per cell at scale 1
+      ctx.strokeStyle = 'rgba(255,255,255,0.06)';
+      ctx.lineWidth = 1;
+      // verticals
+      for(let gx = x % gridSize; gx < canvas.width; gx += gridSize){
+        ctx.beginPath(); ctx.moveTo(gx, 0); ctx.lineTo(gx, canvas.height); ctx.stroke();
+      }
+      // horizontals
+      for(let gy = y % gridSize; gy < canvas.height; gy += gridSize){
+        ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(canvas.width, gy); ctx.stroke();
+      }
     }
-  </script>
+    // tokens
+    tokens.forEach(t=>{
+      const tx = x + t.x * mapScale;
+      const ty = y + t.y * mapScale;
+      const size = (t.size||32) * mapScale;
+      // circle
+      ctx.beginPath();
+      ctx.fillStyle = t.color || '#ffcc66';
+      ctx.strokeStyle = 'rgba(0,0,0,0.6)';
+      ctx.lineWidth = 2;
+      ctx.ellipse(tx, ty, size/2, size/2, 0, 0, Math.PI*2);
+      ctx.fill(); ctx.stroke();
+      // label
+      ctx.fillStyle = '#06202b';
+      ctx.font = `${Math.max(10,12*mapScale)}px sans-serif`;
+      ctx.textAlign = 'center';
+      ctx.fillText(t.label || '', tx, ty + (size/2) + 14*mapScale);
+    });
+    // measurement
+    if(measurePoints.length){
+      ctx.strokeStyle = 'rgba(255,200,100,0.95)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      measurePoints.forEach((p,i)=>{
+        const mx = x + p.x*mapScale, my = y + p.y*mapScale;
+        if(i===0) ctx.moveTo(mx,my); else ctx.lineTo(mx,my);
+      });
+      ctx.stroke();
+      // distance labels
+      for(let i=1;i<measurePoints.length;i++){
+        const a = measurePoints[i-1], b = measurePoints[i];
+        const dx = (b.x-a.x), dy = (b.y-a.y);
+        const distPx = Math.sqrt(dx*dx + dy*dy);
+        const mid = {x:(a.x+b.x)/2, y:(a.y+b.y)/2};
+        ctx.fillStyle='rgba(0,0,0,0.6)'; ctx.fillRect(x+mid.x*mapScale-30, y+mid.y*mapScale-12, 60, 20);
+        ctx.fillStyle='white';
+        const text = `${Math.round(distPx)} px`;
+        ctx.fillText(text, x+mid.x*mapScale, y+mid.y*mapScale+3);
+      }
+    }
+    ctx.restore();
+  } else {
+    // no map loaded
+    ctx.fillStyle = '#051022';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle = '#9fb3cf';
+    ctx.font = '16px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('No map loaded. Click "Choose map" to upload an image.', canvas.width/2, canvas.height/2);
+  }
+}
+
+function loadMapFromDataURL(dataURL){
+  const img = new Image();
+  img.onload = ()=>{
+    mapImg = img;
+    // default scale to fit
+    const scaleX = canvas.width / img.width;
+    const scaleY = canvas.height / img.height;
+    mapScale = Math.min(scaleX, scaleY) * 0.9;
+    mapOffset = {x:0,y:0};
+    state.map = {dataURL, width: img.width, height: img.height, scale: mapScale};
+    saveState(state);
+    draw();
+  };
+  img.src = dataURL;
+}
+
+// file chooser
+const mapFile = document.getElementById('mapFile');
+const chooseMap = document.getElementById('chooseMap');
+chooseMap.addEventListener('click', ()=>mapFile.click());
+mapFile.addEventListener('change', async (ev)=>{
+  const f = ev.target.files[0];
+  if(!f) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    loadMapFromDataURL(e.target.result);
+  };
+  reader.readAsDataURL(f);
+});
+
+// init from state
+function initFromState(){
+  if(state.map && state.map.dataURL){
+    mapImg = new Image();
+    mapImg.onload = ()=>{
+      mapScale = state.map.scale || 1;
+      mapOffset = state.map.offset || {x:0,y:0};
+      draw();
+    };
+    mapImg.src = state.map.dataURL;
+  }
+  tokens = state.tokens || [];
+  showGrid = !!state.grid;
+  renderTokenList();
+  renderCharacters();
+  resizeCanvasToContainer();
+}
+initFromState();
+
+// token management
+const addTokenBtn = document.getElementById('addTokenBtn');
+addTokenBtn.addEventListener('click', ()=> {
+  const label = prompt('Token label (short):','Goblin');
+  if(!label) return;
+  const id = Date.now().toString(36);
+  // place at center of visible map
+  const center = screenToMap(canvas.width/2, canvas.height/2);
+  const t = {id,label, x:center.x, y:center.y, size:48, color:randomColor()};
+  tokens.push(t); state.tokens = tokens; saveState(state); renderTokenList(); draw();
+});
+
+function renderTokenList(){
+  tokenListEl.innerHTML = '';
+  tokens.forEach(t=>{
+    const el = document.createElement('div'); el.className='token';
+    const badge = document.createElement('div'); badge.style.width='28px'; badge.style.height='28px'; badge.style.borderRadius='50%';
+    badge.style.background = t.color;
+    badge.style.flex='0 0 28px';
+    const info = document.createElement('div'); info.style.flex='1';
+    info.innerHTML = `<strong style="color:#e6eef8">${escapeHtml(t.label)}</strong><br/><small class="small">x:${Math.round(t.x)} y:${Math.round(t.y)}</small>`;
+    const btn = document.createElement('button'); btn.textContent='Remove'; btn.onclick = ()=>{
+      tokens = tokens.filter(tt=>tt.id!==t.id);
+      state.tokens = tokens; saveState(state); renderTokenList(); draw();
+    };
+    el.appendChild(badge); el.appendChild(info); el.appendChild(btn);
+    tokenListEl.appendChild(el);
+  });
+}
+
+// coordinate helpers
+function screenToMap(sx, sy){
+  // convert canvas coords to map-image-relative coords (in image pixels)
+  if(!mapImg) return {x: sx, y: sy};
+  const iw = mapImg.width * mapScale;
+  const ih = mapImg.height * mapScale;
+  const x0 = mapOffset.x + (canvas.width - iw)/2;
+  const y0 = mapOffset.y + (canvas.height - ih)/2;
+  return {x: (sx - x0) / mapScale, y: (sy - y0) / mapScale};
+}
+function mapToScreen(mx, my){
+  if(!mapImg) return {x:mx,y:my};
+  const iw = mapImg.width * mapScale;
+  const ih = mapImg.height * mapScale;
+  const x0 = mapOffset.x + (canvas.width - iw)/2;
+  const y0 = mapOffset.y + (canvas.height - ih)/2;
+  return {x: x0 + mx*mapScale, y: y0 + my*mapScale};
+}
+
+// pointer events for tokens and pan, measure
+canvas.addEventListener('pointerdown', (e)=>{
+  canvas.setPointerCapture(e.pointerId);
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  // check if pointer hits a token (iterate from top to bottom)
+  let hit = null;
+  for(let i = tokens.length-1; i>=0; i--){
+    const t = tokens[i];
+    const pos = mapToScreen(t.x, t.y);
+    const size = (t.size||48) * mapScale;
+    const dx = px - pos.x, dy = py - pos.y;
+    if(Math.sqrt(dx*dx + dy*dy) <= size/2 + 6){ hit = t; break; }
+  }
+  if(hit){
+    draggingToken = hit;
+    const pos = mapToScreen(hit.x, hit.y);
+    dragOffset.x = px - pos.x; dragOffset.y = py - pos.y;
+    return;
+  }
+  // start panning
+  isPanning = true;
+  lastPan.x = e.clientX; lastPan.y = e.clientY;
+  if(measureMode){
+    // add measure point
+    const mp = screenToMap(px, py);
+    measurePoints.push(mp);
+    draw();
+  }
+});
+canvas.addEventListener('pointermove', (e)=>{
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left, py = e.clientY - rect.top;
+  if(draggingToken){
+    // update token position from screen point
+    const sx = px - dragOffset.x, sy = py - dragOffset.y;
+    const mpos = screenToMap(sx, sy);
+    draggingToken.x = mpos.x; draggingToken.y = mpos.y;
+    state.tokens = tokens; saveState(state);
+    renderTokenList(); draw();
+    return;
+  }
+  if(isPanning){
+    const dx = e.clientX - lastPan.x; const dy = e.clientY - lastPan.y;
+    lastPan.x = e.clientX; lastPan.y = e.clientY;
+    mapOffset.x += dx; mapOffset.y += dy;
+    state.map = state.map || {}; state.map.offset = mapOffset; saveState(state);
+    draw();
+  }
+});
+canvas.addEventListener('pointerup', (e)=>{
+  canvas.releasePointerCapture(e.pointerId);
+  draggingToken = null; isPanning = false;
+});
+
+// wheel to zoom
+canvas.addEventListener('wheel', (e)=>{
+  e.preventDefault();
+  if(!mapImg) return;
+  const rect = canvas.getBoundingClientRect();
+  const sx = e.clientX - rect.left, sy = e.clientY - rect.top;
+  const before = screenToMap(sx, sy);
+  const delta = -e.deltaY;
+  const factor = delta > 0 ? 1.08 : 1/1.08;
+  mapScale *= factor;
+  // limit
+  mapScale = Math.max(0.1, Math.min(4, mapScale));
+  // adjust offset so the pointed map pixel stays under cursor
+  const after = screenToMap(sx, sy);
+  mapOffset.x += (after.x - before.x) * mapScale;
+  mapOffset.y += (after.y - before.y) * mapScale;
+  state.map = state.map || {}; state.map.scale = mapScale; state.map.offset = mapOffset; saveState(state);
+  draw();
+}, {passive:false});
+
+// toolbar buttons
+document.getElementById('toggleGrid').addEventListener('click', ()=>{
+  showGrid = !showGrid; state.grid = showGrid; saveState(state); draw();
+});
+document.getElementById('measureBtn').addEventListener('click', ()=>{
+  measureMode = !measureMode;
+  if(!measureMode) measurePoints = [];
+  draw();
+  document.getElementById('measureBtn').textContent = measureMode ? 'Ruler (on)' : 'Ruler';
+});
+document.getElementById('exportMap').addEventListener('click', ()=>{
+  // produce a PNG export of the current canvas
+  const link = document.createElement('a');
+  link.download = 'map_export.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+});
+
+document.getElementById('clearAll').addEventListener('click', ()=>{
+  if(!confirm('Clear everything saved locally?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  state = {characters:[], notes:'', map:null, tokens:[], grid:false};
+  location.reload();
+});
+
+// iframe preview interactions: when a character is clicked, iframe is attempted above.
+// Also, if embed blocked by X-Frame-Options, user can open in new tab via the "Open" button.
+
+// helper utils
+function randomColor(){
+  const colors = ['#ffb86b','#f07178','#7ef3a6','#8fb6ff','#f8e5a1','#c88bff'];
+  return colors[Math.floor(Math.random()*colors.length)];
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"']/g, (m)=>({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' })[m]); }
+
+// preview clear on navigation
+function clearPreviewIfNeeded(url){
+  const ifr = iframeInner.querySelector('iframe');
+  if(ifr && ifr.src === url) iframeInner.innerHTML = '<div style="padding:12px;color:var(--muted);font-size:13px">Select a character on the left to preview.</div>';
+}
+
+// initialize canvas size and draw loop
+resizeCanvasToContainer();
+setInterval(()=>{ /* periodic save for tokens/notes if changed could be added */ }, 5000);
+
+// persist characters/tokens when unloading
+window.addEventListener('beforeunload', ()=> saveState(state));
+
+</script>
 </body>
 </html>
