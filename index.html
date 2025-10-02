@@ -3,22 +3,36 @@
 <head>
   <meta charset="UTF-8">
   <title>D&D Signup – Dec 18, 2025</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
+    /* ==== Background ==== */
     body {
       margin: 0;
       font-family: 'Trebuchet MS', sans-serif;
       color: #eee;
-      background: url('https://i.ibb.co/7Q2D2Pg/black-dragon.jpg') no-repeat center center fixed;
-      background-size: cover;
+      background: linear-gradient(135deg, #0d0000, #1a0000, #400000, #1a0000);
+      background-attachment: fixed;
+      background-size: 400% 400%;
+      animation: gradientShift 20s ease infinite;
     }
+    @keyframes gradientShift {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    /* ==== Header ==== */
     header {
-      background: rgba(0, 0, 0, 0.7);
+      background: rgba(0, 0, 0, 0.75);
       padding: 20px;
       text-align: center;
       font-size: 2em;
       color: #f4d35e;
       font-weight: bold;
+      border-bottom: 2px solid #600;
     }
+
+    /* ==== Layout ==== */
     .container {
       display: grid;
       grid-template-columns: 2fr 1fr;
@@ -29,13 +43,17 @@
       background: rgba(0, 0, 0, 0.75);
       padding: 15px;
       border-radius: 12px;
+      border: 1px solid #600;
     }
+
+    /* ==== Inputs & Buttons ==== */
     input, textarea {
-      width: 95%;
+      width: 100%;
       padding: 10px;
       margin: 8px 0;
       border-radius: 6px;
       border: none;
+      box-sizing: border-box;
     }
     button {
       padding: 10px 20px;
@@ -46,34 +64,77 @@
       font-weight: bold;
     }
     button:hover { background: #d4b23c; }
+
+    /* ==== Player Grid ==== */
     .player-grid {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
       gap: 15px;
     }
+
     .player-card {
-      background: rgba(20, 20, 20, 0.85);
-      padding: 10px;
+      background: #f8f1e4;
+      color: #222;
+      padding: 12px;
       border-radius: 10px;
       text-align: center;
-      box-shadow: 0 0 10px rgba(0,0,0,0.8);
+      border: 2px solid #800;
+      box-shadow: 0 0 15px rgba(255, 0, 0, 0.4);
+      font-family: 'Georgia', serif;
+      background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+      background-repeat: repeat;
     }
     .player-card img {
       max-width: 150px;
       border-radius: 10px;
       margin-bottom: 8px;
+      border: 1px solid #600;
     }
+    .player-card a {
+      color: #800;
+      font-weight: bold;
+      text-decoration: none;
+    }
+    .player-card a:hover { text-decoration: underline; }
+
+    /* ==== Chat ==== */
     .chat-box {
       max-height: 400px;
       overflow-y: auto;
       background: #222;
       padding: 10px;
       border-radius: 8px;
+      font-size: 0.9em;
+      border: 1px solid #600;
     }
     .chat-message {
       margin: 5px 0;
       padding: 5px;
       border-bottom: 1px solid #444;
+    }
+
+    /* ==== Mobile Responsive ==== */
+    @media (max-width: 900px) {
+      .container {
+        grid-template-columns: 1fr;
+      }
+      header {
+        font-size: 1.5em;
+        padding: 15px;
+      }
+      .chat-box {
+        max-height: 250px;
+      }
+    }
+    @media (max-width: 500px) {
+      .player-card {
+        font-size: 0.9em;
+        padding: 8px;
+      }
+      button {
+        width: 100%;
+        margin-top: 5px;
+      }
     }
   </style>
 </head>
@@ -82,7 +143,7 @@
 <header>🐉 D&D Signup – Dec 18, 2025 🐉</header>
 
 <div class="container">
-  <!-- Players -->
+  <!-- Signup Form & Players -->
   <div>
     <div class="form-container">
       <h2>Add Your Character</h2>
@@ -93,6 +154,7 @@
       <textarea id="notes" placeholder="Class, level, RSVP status..."></textarea>
       <button onclick="addPlayer()">Add to List</button>
     </div>
+
     <h2 style="color:#f4d35e; text-align:center;">Players Signed Up</h2>
     <div class="player-grid" id="players"></div>
   </div>
