@@ -419,22 +419,7 @@
     const grid = document.getElementById('player-grid');
     const emptyState = document.getElementById('empty-state');
 
-    const fallbackPlayers = [
-      {
-        name: 'Rowan Blackwater',
-        character: 'Rowan Blackwater – Human Blood Hunter',
-        sheet: 'https://www.dndbeyond.com/profile/sample/characters/1',
-        avatar: 'https://images.unsplash.it/placeholder?height=400&width=400&text=Blood%20Hunter',
-        notes: 'Level 7 | Crimson Rite specialist | Seeks redemption.'
-      },
-      {
-        name: 'Lyra "Spark" Dawnsong',
-        character: 'Lyra Dawnsong – Fire Genasi Artificer',
-        sheet: 'https://www.dndbeyond.com/profile/sample/characters/2',
-        avatar: 'https://images.unsplash.it/placeholder?height=400&width=400&text=Artificer',
-        notes: 'Level 6 | Tinkerer supreme | Thematic battle music queued.'
-      }
-    ];
+    const fallbackPlayers = [];
 
     function createPlayerCard(player) {
       const card = document.createElement('article');
