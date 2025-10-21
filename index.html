@@ -506,6 +506,17 @@
         const parsed = new URL(trimmed);
         parsed.hash = '';
         parsed.search = '';
+
+        if (parsed.pathname) {
+          const strippedPath = parsed.pathname.replace(/\/+$/, '');
+          if (strippedPath.toLowerCase().endsWith('/players')) {
+            const withoutPlayers = strippedPath.replace(/\/?players$/i, '');
+            parsed.pathname = withoutPlayers || '/';
+          } else {
+            parsed.pathname = strippedPath || '/';
+          }
+        }
+
         let normalized = parsed.href;
         if (normalized.endsWith('/')) {
           normalized = normalized.replace(/\/+$/, '');
