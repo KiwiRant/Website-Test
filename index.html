@@ -217,6 +217,50 @@
       resize: vertical;
     }
 
+    .worker-config {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 8px;
+    }
+
+    .worker-config button {
+      appearance: none;
+      border: 1px solid rgba(255, 67, 97, 0.35);
+      background: rgba(255, 255, 255, 0.05);
+      color: var(--text);
+      border-radius: 999px;
+      padding: 8px 18px;
+      font-weight: 600;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 180ms ease, transform 180ms ease;
+    }
+
+    .worker-config button:hover {
+      background: rgba(255, 67, 97, 0.15);
+      transform: translateY(-1px);
+    }
+
+    .worker-status {
+      font-size: 0.85rem;
+      color: var(--muted);
+    }
+
+    .worker-status[data-state="connected"] {
+      color: #72f1b8;
+    }
+
+    .worker-status[data-state="pending"] {
+      color: var(--muted);
+    }
+
+    .worker-status[data-state="error"] {
+      color: #ffb347;
+    }
+
     button[type="submit"] {
       margin-top: 8px;
       padding: 14px;
@@ -374,6 +418,10 @@
 
     <section id="sign-up">
       <h2>Sign Your Name in Blood (or Ink)</h2>
+      <div class="worker-config">
+        <p id="worker-status" class="worker-status" role="status" aria-live="polite" data-state="pending">Roster connection not configured.</p>
+        <button type="button" id="configure-worker">Set Worker URL</button>
+      </div>
       <form id="player-form">
         <div class="input-group">
           <label for="playerName">Player Name</label>
@@ -384,8 +432,8 @@
           <input type="text" id="characterName" name="character" placeholder="Sable Nyx – Tiefling Warlock" required>
         </div>
         <div class="input-group">
-          <label for="sheetLink">D&amp;D Beyond Sheet URL</label>
-          <input type="url" id="sheetLink" name="sheet" placeholder="https://www.dndbeyond.com/characters/1234567" required>
+          <label for="sheetLink">D&amp;D Beyond Sheet URL or Share Link</label>
+          <input type="text" id="sheetLink" name="sheet" inputmode="url" placeholder="www.dndbeyond.com/characters/1234567/mfORx7" title="Paste the full character URL or share link from D&amp;D Beyond." required>
         </div>
         <div class="input-group">
           <label for="avatarLink">Lexica Portrait URL</label>
@@ -414,12 +462,108 @@
   </main>
 
   <script>
-    const API_URL = "https://your-worker.example.workers.dev"; // Replace with your Cloudflare Worker route
     const form = document.getElementById('player-form');
     const grid = document.getElementById('player-grid');
     const emptyState = document.getElementById('empty-state');
+    const workerButton = document.getElementById('configure-worker');
+    const workerStatus = document.getElementById('worker-status');
 
+    const WORKER_STORAGE_KEY = 'crimson-chronicle-worker-url';
     const fallbackPlayers = [];
+
+    let apiUrl = '';
+    let pollIntervalId = null;
+
+    function loadStoredApiUrl() {
+      try {
+        return localStorage.getItem(WORKER_STORAGE_KEY) || '';
+      } catch (error) {
+        console.warn('Unable to read stored Worker URL.', error);
+        return '';
+      }
+    }
+
+    function saveStoredApiUrl(value) {
+      try {
+        if (value) {
+          localStorage.setItem(WORKER_STORAGE_KEY, value);
+        } else {
+          localStorage.removeItem(WORKER_STORAGE_KEY);
+        }
+      } catch (error) {
+        console.warn('Unable to persist Worker URL.', error);
+      }
+    }
+
+    function sanitizeApiUrl(value) {
+      if (!value) return '';
+      let trimmed = value.trim();
+      if (!trimmed) return '';
+      if (!/^https?:\/\//i.test(trimmed)) {
+        trimmed = `https://${trimmed}`;
+      }
+      try {
+        const parsed = new URL(trimmed);
+        parsed.hash = '';
+        parsed.search = '';
+        let normalized = parsed.href;
+        if (normalized.endsWith('/')) {
+          normalized = normalized.replace(/\/+$/, '');
+        }
+        return normalized;
+      } catch (error) {
+        return '';
+      }
+    }
+
+    function normalizeSheetLink(value) {
+      if (!value) return '';
+      let trimmed = value.trim();
+      if (!trimmed) return '';
+      if (!/^https?:\/\//i.test(trimmed)) {
+        trimmed = `https://${trimmed.replace(/^\/+/, '')}`;
+      }
+      return trimmed;
+    }
+
+    function isValidDnDBeyondSheet(link) {
+      try {
+        const url = new URL(link);
+        const hostname = url.hostname.replace(/^www\./i, '').toLowerCase();
+        if (hostname !== 'dndbeyond.com' && hostname !== 'ddb.ac') {
+          return false;
+        }
+        const path = url.pathname.replace(/\/+$/, '').toLowerCase();
+        if (path.startsWith('/profile/')) {
+          return /\/profile\/[^/]+\/characters\/\d+$/.test(path);
+        }
+        return /\/characters\/\d+(\/[a-z0-9_-]+)?$/.test(path);
+      } catch (error) {
+        return false;
+      }
+    }
+
+    function normalizePayload(payload) {
+      const normalized = {
+        name: (payload.name || '').trim(),
+        character: (payload.character || '').trim(),
+        sheet: normalizeSheetLink(payload.sheet),
+        avatar: (payload.avatar || '').trim(),
+        notes: (payload.notes || '').trim()
+      };
+
+      if (!normalized.name || !normalized.character || !normalized.sheet || !normalized.avatar) {
+        alert('Please fill in all required fields with valid information.');
+        return null;
+      }
+
+      if (normalized.sheet && !isValidDnDBeyondSheet(normalized.sheet)) {
+        alert('Please provide a valid D&D Beyond character share link.');
+        return null;
+      }
+
+      return normalized;
+    }
 
     function createPlayerCard(player) {
       const card = document.createElement('article');
@@ -449,43 +593,129 @@
       });
     }
 
+    function setWorkerStatus(message, state = 'pending') {
+      if (!workerStatus) return;
+      workerStatus.textContent = message;
+      workerStatus.dataset.state = state;
+    }
+
     async function fetchPlayers() {
+      if (!apiUrl) {
+        setWorkerStatus('Roster connection not configured.', 'pending');
+        renderPlayers(fallbackPlayers);
+        return;
+      }
+
       try {
-        const response = await fetch(`${API_URL}/players`, { cache: 'no-store' });
+        setWorkerStatus(`Connecting to ${apiUrl}...`, 'pending');
+        const response = await fetch(`${apiUrl}/players`, { cache: 'no-store' });
         if (!response.ok) throw new Error('Network response was not ok');
         const players = await response.json();
+        setWorkerStatus(`Connected to ${apiUrl}`, 'connected');
         renderPlayers(players);
       } catch (error) {
         console.warn('Falling back to sample data:', error);
+        setWorkerStatus(`Could not reach ${apiUrl}. Check your Worker deployment.`, 'error');
         renderPlayers(fallbackPlayers);
       }
     }
 
+    function restartPolling() {
+      if (pollIntervalId) {
+        clearInterval(pollIntervalId);
+        pollIntervalId = null;
+      }
+      fetchPlayers();
+      if (apiUrl) {
+        pollIntervalId = setInterval(fetchPlayers, 8000);
+      }
+    }
+
+    function setApiUrl(nextUrl) {
+      apiUrl = nextUrl;
+      saveStoredApiUrl(apiUrl);
+      restartPolling();
+    }
+
     async function submitPlayer(event) {
       event.preventDefault();
+
+      if (!form.reportValidity()) {
+        return;
+      }
+
       const formData = new FormData(form);
       const payload = Object.fromEntries(formData.entries());
+      const normalized = normalizePayload(payload);
+
+      if (!normalized) {
+        return;
+      }
+
+      form.elements.name.value = normalized.name;
+      form.elements.character.value = normalized.character;
+      form.elements.sheet.value = normalized.sheet;
+      form.elements.avatar.value = normalized.avatar;
+      if (form.elements.notes) {
+        form.elements.notes.value = normalized.notes;
+      }
+
+      if (!apiUrl) {
+        alert('Add your Cloudflare Worker URL via the "Set Worker URL" button before submitting.');
+        workerButton?.focus();
+        return;
+      }
 
       try {
-        const response = await fetch(`${API_URL}/players`, {
+        const response = await fetch(`${apiUrl}/players`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify(normalized)
         });
 
         if (!response.ok) throw new Error('Failed to save player');
 
         form.reset();
-        await fetchPlayers();
+        fetchPlayers();
       } catch (error) {
         alert('We could not reach the roster right now. Double-check your Worker URL and Cloudflare D1 bindings.');
         console.error(error);
       }
     }
 
+    function initializeApiUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const hasWorkerParam = params.has('worker');
+      const fromQuery = sanitizeApiUrl(params.get('worker'));
+      const fromStorage = sanitizeApiUrl(loadStoredApiUrl());
+      const initial = fromQuery || fromStorage || '';
+
+      if (hasWorkerParam) {
+        params.delete('worker');
+        const newQuery = params.toString();
+        const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}${window.location.hash}`;
+        window.history.replaceState({}, '', newUrl);
+      }
+
+      setApiUrl(initial);
+    }
+
+    if (workerButton) {
+      workerButton.addEventListener('click', () => {
+        const input = prompt('Enter your Cloudflare Worker URL', apiUrl || '');
+        if (input === null) return;
+        const sanitized = sanitizeApiUrl(input);
+        if (!sanitized) {
+          setApiUrl('');
+          alert('Roster connection cleared. Add a Worker URL to sync with your database.');
+          return;
+        }
+        setApiUrl(sanitized);
+      });
+    }
+
     form.addEventListener('submit', submitPlayer);
-    fetchPlayers();
-    setInterval(fetchPlayers, 8000);
+    initializeApiUrl();
   </script>
 </body>
 </html>
