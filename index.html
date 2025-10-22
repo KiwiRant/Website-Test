@@ -473,6 +473,19 @@
 
     let apiUrl = '';
     let pollIntervalId = null;
+    const isHttpContext = /^https?:$/i.test(window.location.protocol);
+
+    function buildEndpoint(pathname) {
+      if (apiUrl) {
+        return `${apiUrl}${pathname}`;
+      }
+
+      if (!isHttpContext) {
+        return '';
+      }
+
+      return pathname.startsWith('/') ? pathname : `/${pathname}`;
+    }
 
     function loadStoredApiUrl() {
       try {
@@ -611,22 +624,37 @@
     }
 
     async function fetchPlayers() {
-      if (!apiUrl) {
+      const endpoint = buildEndpoint('/players');
+
+      if (!endpoint) {
         setWorkerStatus('Roster connection not configured.', 'pending');
         renderPlayers(fallbackPlayers);
         return;
       }
 
+      const hasConfiguredUrl = Boolean(apiUrl);
+
       try {
-        setWorkerStatus(`Connecting to ${apiUrl}...`, 'pending');
-        const response = await fetch(`${apiUrl}/players`, { cache: 'no-store' });
+        const connectingMessage = hasConfiguredUrl
+          ? `Connecting to ${apiUrl}...`
+          : 'Connecting to local Worker...';
+        setWorkerStatus(connectingMessage, 'pending');
+
+        const response = await fetch(endpoint, { cache: 'no-store' });
         if (!response.ok) throw new Error('Network response was not ok');
         const players = await response.json();
-        setWorkerStatus(`Connected to ${apiUrl}`, 'connected');
+
+        const successMessage = hasConfiguredUrl
+          ? `Connected to ${apiUrl}`
+          : 'Connected to local Worker';
+        setWorkerStatus(successMessage, 'connected');
         renderPlayers(players);
       } catch (error) {
         console.warn('Falling back to sample data:', error);
-        setWorkerStatus(`Could not reach ${apiUrl}. Check your Worker deployment.`, 'error');
+        const failureMessage = hasConfiguredUrl
+          ? `Could not reach ${apiUrl}. Check your Worker deployment.`
+          : 'Could not reach the Worker on this origin. Configure a URL to sync with D1.';
+        setWorkerStatus(failureMessage, 'error');
         renderPlayers(fallbackPlayers);
       }
     }
@@ -637,7 +665,7 @@
         pollIntervalId = null;
       }
       fetchPlayers();
-      if (apiUrl) {
+      if (buildEndpoint('/players')) {
         pollIntervalId = setInterval(fetchPlayers, 8000);
       }
     }
@@ -671,14 +699,16 @@
         form.elements.notes.value = normalized.notes;
       }
 
-      if (!apiUrl) {
-        alert('Add your Cloudflare Worker URL via the "Set Worker URL" button before submitting.');
+      const endpoint = buildEndpoint('/players');
+
+      if (!endpoint) {
+        alert('Add your Cloudflare Worker URL via the "Set Worker URL" button or deploy this page behind a Cloudflare Worker before submitting.');
         workerButton?.focus();
         return;
       }
 
       try {
-        const response = await fetch(`${apiUrl}/players`, {
+        const response = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(normalized)
