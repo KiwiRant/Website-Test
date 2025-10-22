@@ -223,25 +223,10 @@
       align-items: center;
       gap: 12px;
       margin-bottom: 8px;
-    }
-
-    .worker-config button {
-      appearance: none;
-      border: 1px solid rgba(255, 67, 97, 0.35);
-      background: rgba(255, 255, 255, 0.05);
-      color: var(--text);
-      border-radius: 999px;
-      padding: 8px 18px;
-      font-weight: 600;
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-      cursor: pointer;
-      transition: background 180ms ease, transform 180ms ease;
-    }
-
-    .worker-config button:hover {
-      background: rgba(255, 67, 97, 0.15);
-      transform: translateY(-1px);
+      padding: 12px 16px;
+      border-radius: var(--radius);
+      border: 1px solid rgba(255, 67, 97, 0.16);
+      background: rgba(0, 0, 0, 0.25);
     }
 
     .worker-status {
@@ -419,8 +404,7 @@
     <section id="sign-up">
       <h2>Sign Your Name in Blood (or Ink)</h2>
       <div class="worker-config">
-        <p id="worker-status" class="worker-status" role="status" aria-live="polite" data-state="pending">Roster connection not configured.</p>
-        <button type="button" id="configure-worker">Set Worker URL</button>
+        <p id="worker-status" class="worker-status" role="status" aria-live="polite" data-state="pending">Checking roster connection...</p>
       </div>
       <form id="player-form">
         <div class="input-group">
@@ -465,79 +449,18 @@
     const form = document.getElementById('player-form');
     const grid = document.getElementById('player-grid');
     const emptyState = document.getElementById('empty-state');
-    const workerButton = document.getElementById('configure-worker');
     const workerStatus = document.getElementById('worker-status');
-
-    const WORKER_STORAGE_KEY = 'crimson-chronicle-worker-url';
     const fallbackPlayers = [];
 
-    let apiUrl = '';
     let pollIntervalId = null;
     const isHttpContext = /^https?:$/i.test(window.location.protocol);
 
     function buildEndpoint(pathname) {
-      if (apiUrl) {
-        return `${apiUrl}${pathname}`;
-      }
-
       if (!isHttpContext) {
         return '';
       }
 
       return pathname.startsWith('/') ? pathname : `/${pathname}`;
-    }
-
-    function loadStoredApiUrl() {
-      try {
-        return localStorage.getItem(WORKER_STORAGE_KEY) || '';
-      } catch (error) {
-        console.warn('Unable to read stored Worker URL.', error);
-        return '';
-      }
-    }
-
-    function saveStoredApiUrl(value) {
-      try {
-        if (value) {
-          localStorage.setItem(WORKER_STORAGE_KEY, value);
-        } else {
-          localStorage.removeItem(WORKER_STORAGE_KEY);
-        }
-      } catch (error) {
-        console.warn('Unable to persist Worker URL.', error);
-      }
-    }
-
-    function sanitizeApiUrl(value) {
-      if (!value) return '';
-      let trimmed = value.trim();
-      if (!trimmed) return '';
-      if (!/^https?:\/\//i.test(trimmed)) {
-        trimmed = `https://${trimmed}`;
-      }
-      try {
-        const parsed = new URL(trimmed);
-        parsed.hash = '';
-        parsed.search = '';
-
-        if (parsed.pathname) {
-          const strippedPath = parsed.pathname.replace(/\/+$/, '');
-          if (strippedPath.toLowerCase().endsWith('/players')) {
-            const withoutPlayers = strippedPath.replace(/\/?players$/i, '');
-            parsed.pathname = withoutPlayers || '/';
-          } else {
-            parsed.pathname = strippedPath || '/';
-          }
-        }
-
-        let normalized = parsed.href;
-        if (normalized.endsWith('/')) {
-          normalized = normalized.replace(/\/+$/, '');
-        }
-        return normalized;
-      } catch (error) {
-        return '';
-      }
     }
 
     function normalizeSheetLink(value) {
@@ -627,34 +550,23 @@
       const endpoint = buildEndpoint('/players');
 
       if (!endpoint) {
-        setWorkerStatus('Roster connection not configured.', 'pending');
+        setWorkerStatus('Roster requests require an HTTP(S) deployment.', 'error');
         renderPlayers(fallbackPlayers);
         return;
       }
 
-      const hasConfiguredUrl = Boolean(apiUrl);
-
       try {
-        const connectingMessage = hasConfiguredUrl
-          ? `Connecting to ${apiUrl}...`
-          : 'Connecting to local Worker...';
-        setWorkerStatus(connectingMessage, 'pending');
+        setWorkerStatus('Syncing roster with D1...', 'pending');
 
         const response = await fetch(endpoint, { cache: 'no-store' });
         if (!response.ok) throw new Error('Network response was not ok');
         const players = await response.json();
 
-        const successMessage = hasConfiguredUrl
-          ? `Connected to ${apiUrl}`
-          : 'Connected to local Worker';
-        setWorkerStatus(successMessage, 'connected');
+        setWorkerStatus('Connected to the roster database.', 'connected');
         renderPlayers(players);
       } catch (error) {
         console.warn('Falling back to sample data:', error);
-        const failureMessage = hasConfiguredUrl
-          ? `Could not reach ${apiUrl}. Check your Worker deployment.`
-          : 'Could not reach the Worker on this origin. Configure a URL to sync with D1.';
-        setWorkerStatus(failureMessage, 'error');
+        setWorkerStatus('Could not reach the roster API. Confirm your deployment exposes /players with D1 access.', 'error');
         renderPlayers(fallbackPlayers);
       }
     }
@@ -668,12 +580,6 @@
       if (buildEndpoint('/players')) {
         pollIntervalId = setInterval(fetchPlayers, 8000);
       }
-    }
-
-    function setApiUrl(nextUrl) {
-      apiUrl = nextUrl;
-      saveStoredApiUrl(apiUrl);
-      restartPolling();
     }
 
     async function submitPlayer(event) {
@@ -702,8 +608,7 @@
       const endpoint = buildEndpoint('/players');
 
       if (!endpoint) {
-        alert('Add your Cloudflare Worker URL via the "Set Worker URL" button or deploy this page behind a Cloudflare Worker before submitting.');
-        workerButton?.focus();
+        alert('Roster submissions require an HTTP(S) deployment with a /players endpoint bound to D1.');
         return;
       }
 
@@ -719,44 +624,13 @@
         form.reset();
         fetchPlayers();
       } catch (error) {
-        alert('We could not reach the roster right now. Double-check your Worker URL and Cloudflare D1 bindings.');
+        alert('We could not reach the roster right now. Confirm your deployment exposes the /players endpoint with a D1 binding.');
         console.error(error);
       }
     }
 
-    function initializeApiUrl() {
-      const params = new URLSearchParams(window.location.search);
-      const hasWorkerParam = params.has('worker');
-      const fromQuery = sanitizeApiUrl(params.get('worker'));
-      const fromStorage = sanitizeApiUrl(loadStoredApiUrl());
-      const initial = fromQuery || fromStorage || '';
-
-      if (hasWorkerParam) {
-        params.delete('worker');
-        const newQuery = params.toString();
-        const newUrl = `${window.location.pathname}${newQuery ? `?${newQuery}` : ''}${window.location.hash}`;
-        window.history.replaceState({}, '', newUrl);
-      }
-
-      setApiUrl(initial);
-    }
-
-    if (workerButton) {
-      workerButton.addEventListener('click', () => {
-        const input = prompt('Enter your Cloudflare Worker URL', apiUrl || '');
-        if (input === null) return;
-        const sanitized = sanitizeApiUrl(input);
-        if (!sanitized) {
-          setApiUrl('');
-          alert('Roster connection cleared. Add a Worker URL to sync with your database.');
-          return;
-        }
-        setApiUrl(sanitized);
-      });
-    }
-
     form.addEventListener('submit', submitPlayer);
-    initializeApiUrl();
+    restartPolling();
   </script>
 </body>
 </html>
