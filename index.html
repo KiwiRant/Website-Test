@@ -507,7 +507,29 @@
     const grid = document.getElementById('player-grid');
     const emptyState = document.getElementById('empty-state');
     const workerStatus = document.getElementById('worker-status');
-    const fallbackPlayers = [];
+    const fallbackPlayers = [
+      {
+        name: 'Captain Lyra Vance',
+        character: 'Lyra Vance – Human Wizard',
+        sheet: 'https://www.dndbeyond.com/characters/12345678',
+        avatar: 'https://placehold.co/400x400/4b1038/ffffff.png?text=Lyra',
+        notes: 'Archmage of the Ember Veil, keeper of the war table.'
+      },
+      {
+        name: 'Druun “Stonewall” Thane',
+        character: 'Stonewall Thane – Dwarf Fighter',
+        sheet: 'https://www.dndbeyond.com/characters/87654321',
+        avatar: 'https://placehold.co/400x400/30132d/ffffff.png?text=Thane',
+        notes: 'Shield master and veteran of the Siege of Velis.'
+      },
+      {
+        name: 'Seraphine Nyx',
+        character: 'Seraphine Nyx – Tiefling Warlock',
+        sheet: 'https://www.dndbeyond.com/characters/24681357',
+        avatar: 'https://placehold.co/400x400/180819/ffffff.png?text=Nyx',
+        notes: 'Pact-bound emissary who negotiates with shadows.'
+      }
+    ];
     const avatarInput = form.elements.avatar;
     const avatarPreview = document.getElementById('avatar-preview');
     const avatarPreviewImage = document.getElementById('avatar-preview-image');
@@ -681,7 +703,7 @@
         renderPlayers(players);
       } catch (error) {
         console.warn('Falling back to sample data:', error);
-        setWorkerStatus('Could not reach the roster API. Confirm your deployment exposes /players with D1 access.', 'error');
+        setWorkerStatus('Showing sample roster data. Deploy with a /players endpoint bound to D1 to sync live entries.', 'error');
         renderPlayers(fallbackPlayers);
       }
     }
