@@ -187,6 +187,57 @@
       gap: 6px;
     }
 
+    .avatar-preview {
+      margin-top: 12px;
+      padding: 12px;
+      border-radius: calc(var(--radius) - 6px);
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 67, 97, 0.18);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: border-color 180ms ease, background 180ms ease;
+    }
+
+    .avatar-preview[data-state="error"] {
+      border-color: rgba(255, 105, 130, 0.5);
+      background: rgba(255, 67, 97, 0.08);
+    }
+
+    .avatar-preview figure {
+      margin: 0;
+      width: 96px;
+      height: 96px;
+      border-radius: calc(var(--radius) - 8px);
+      overflow: hidden;
+      background: rgba(5, 2, 3, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .avatar-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .avatar-preview p {
+      margin: 0;
+      font-size: 0.9rem;
+      line-height: 1.4;
+      color: var(--muted);
+    }
+
+    .avatar-preview[data-state="error"] p {
+      color: #ff8da3;
+    }
+
+    .avatar-preview[data-state="loading"] p {
+      color: #f5f1ff;
+    }
+
     label {
       font-weight: 600;
       font-size: 0.9rem;
@@ -422,6 +473,12 @@
         <div class="input-group">
           <label for="avatarLink">Lexica Portrait URL</label>
           <input type="url" id="avatarLink" name="avatar" placeholder="https://image.lexica.art/full/..." required>
+          <div id="avatar-preview" class="avatar-preview" data-state="idle" hidden>
+            <figure>
+              <img id="avatar-preview-image" alt="Portrait preview">
+            </figure>
+            <p id="avatar-preview-message" role="status" aria-live="polite">Your Lexica portrait will appear here when the image loads.</p>
+          </div>
         </div>
         <div class="input-group">
           <label for="notes">Party Notes</label>
@@ -451,9 +508,67 @@
     const emptyState = document.getElementById('empty-state');
     const workerStatus = document.getElementById('worker-status');
     const fallbackPlayers = [];
+    const avatarInput = form.elements.avatar;
+    const avatarPreview = document.getElementById('avatar-preview');
+    const avatarPreviewImage = document.getElementById('avatar-preview-image');
+    const avatarPreviewMessage = document.getElementById('avatar-preview-message');
 
     let pollIntervalId = null;
     const isHttpContext = /^https?:$/i.test(window.location.protocol);
+
+    function resetAvatarPreview() {
+      if (!avatarPreview || !avatarPreviewImage || !avatarPreviewMessage) return;
+      avatarPreview.hidden = true;
+      avatarPreview.dataset.state = 'idle';
+      avatarPreviewImage.removeAttribute('src');
+      delete avatarPreviewImage.dataset.currentSrc;
+      avatarPreviewMessage.textContent = 'Your Lexica portrait will appear here when the image loads.';
+    }
+
+    function showAvatarPreview(message, state = 'ready') {
+      if (!avatarPreview || !avatarPreviewMessage) return;
+      avatarPreview.hidden = false;
+      avatarPreview.dataset.state = state;
+      avatarPreviewMessage.textContent = message;
+    }
+
+    function updateAvatarPreview() {
+      if (!avatarPreview || !avatarInput || !avatarPreviewImage || !avatarPreviewMessage) return;
+      const value = avatarInput.value.trim();
+
+      if (!value) {
+        resetAvatarPreview();
+        return;
+      }
+
+      let normalizedUrl;
+      try {
+        normalizedUrl = new URL(value, window.location.href).href;
+      } catch (error) {
+        avatarPreviewImage.removeAttribute('src');
+        delete avatarPreviewImage.dataset.currentSrc;
+        showAvatarPreview('Enter a valid image URL to preview your portrait.', 'error');
+        return;
+      }
+
+      if (avatarPreviewImage.dataset.currentSrc === normalizedUrl && avatarPreview.dataset.state === 'ready') {
+        showAvatarPreview('Portrait preview loaded.', 'ready');
+        return;
+      }
+
+      showAvatarPreview('Loading portrait preview...', 'loading');
+      avatarPreviewImage.onload = () => {
+        avatarPreviewImage.dataset.currentSrc = normalizedUrl;
+        showAvatarPreview('Portrait preview loaded.', 'ready');
+      };
+      avatarPreviewImage.onerror = () => {
+        avatarPreviewImage.removeAttribute('src');
+        delete avatarPreviewImage.dataset.currentSrc;
+        showAvatarPreview('We could not load an image from that URL. Double-check that it is publicly accessible.', 'error');
+      };
+
+      avatarPreviewImage.src = normalizedUrl;
+    }
 
     function buildEndpoint(pathname) {
       if (!isHttpContext) {
@@ -630,6 +745,13 @@
     }
 
     form.addEventListener('submit', submitPlayer);
+
+    if (avatarInput) {
+      avatarInput.addEventListener('input', updateAvatarPreview);
+      avatarInput.addEventListener('change', updateAvatarPreview);
+      updateAvatarPreview();
+    }
+
     restartPolling();
   </script>
 </body>
