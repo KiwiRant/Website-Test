@@ -10,9 +10,6 @@
   <style>
     :root {
       color-scheme: dark;
-      --bg-dark: #050203;
-      --bg-panel: rgba(10, 2, 3, 0.85);
-      --bg-panel-solid: #120105;
       --accent: #b9052c;
       --accent-soft: #ff4361;
       --text: #f5f1ff;
@@ -20,6 +17,67 @@
       --radius: 18px;
       --shadow: 0 20px 40px rgba(185, 5, 44, 0.35);
       --max-width: 1080px;
+      --body-background:
+        radial-gradient(circle at top right, rgba(185, 5, 44, 0.35), transparent 40%),
+        radial-gradient(circle at 18% 12%, rgba(255, 67, 97, 0.22), transparent 42%),
+        linear-gradient(140deg, #050203 0%, #140208 38%, #040102 100%);
+      --bg-panel: rgba(10, 2, 3, 0.85);
+      --bg-panel-solid: #120105;
+      --hero-background: linear-gradient(120deg, rgba(12, 1, 4, 0.9), rgba(35, 0, 10, 0.86));
+      --hero-border: rgba(255, 67, 97, 0.25);
+      --panel-border: rgba(255, 67, 97, 0.18);
+      --detail-border: rgba(255, 67, 97, 0.2);
+      --secondary-cta-bg: rgba(255, 255, 255, 0.05);
+      --secondary-cta-border: rgba(255, 67, 97, 0.2);
+      --avatar-bg: rgba(255, 255, 255, 0.04);
+      --avatar-border: rgba(255, 67, 97, 0.18);
+      --avatar-error-border: rgba(255, 105, 130, 0.5);
+      --avatar-error-bg: rgba(255, 67, 97, 0.08);
+      --input-bg: rgba(255, 255, 255, 0.06);
+      --input-border: rgba(255, 67, 97, 0.28);
+      --player-card-bg: rgba(255, 255, 255, 0.03);
+      --player-card-border: rgba(255, 67, 97, 0.22);
+      --player-card-border-hover: rgba(255, 67, 97, 0.4);
+      --player-card-shadow: 0 12px 26px rgba(185, 5, 44, 0.32);
+      --player-card-glow: radial-gradient(circle at center, rgba(255, 67, 97, 0.25), transparent 60%);
+      --player-card-img-border: rgba(255, 67, 97, 0.3);
+      --player-card-img-shadow: 0 12px 26px rgba(185, 5, 44, 0.32);
+      --empty-border: rgba(255, 67, 97, 0.35);
+      --toggle-shadow: 0 12px 22px rgba(185, 5, 44, 0.28);
+    }
+
+    body[data-theme="light"] {
+      color-scheme: light;
+      --text: #2b0e1d;
+      --muted: #6e4b59;
+      --shadow: 0 20px 40px rgba(185, 5, 44, 0.18);
+      --body-background:
+        radial-gradient(circle at top right, rgba(255, 140, 163, 0.35), transparent 44%),
+        radial-gradient(circle at 22% 16%, rgba(255, 209, 222, 0.32), transparent 48%),
+        linear-gradient(140deg, #fff5f8 0%, #ffe8ef 38%, #fdf2f6 100%);
+      --bg-panel: rgba(255, 255, 255, 0.9);
+      --bg-panel-solid: #fff2f5;
+      --hero-background: linear-gradient(120deg, rgba(255, 255, 255, 0.95), rgba(255, 234, 239, 0.92));
+      --hero-border: rgba(185, 5, 44, 0.18);
+      --panel-border: rgba(185, 5, 44, 0.16);
+      --detail-border: rgba(185, 5, 44, 0.18);
+      --secondary-cta-bg: rgba(185, 5, 44, 0.08);
+      --secondary-cta-border: rgba(185, 5, 44, 0.2);
+      --avatar-bg: rgba(185, 5, 44, 0.05);
+      --avatar-border: rgba(185, 5, 44, 0.22);
+      --avatar-error-border: rgba(220, 77, 103, 0.6);
+      --avatar-error-bg: rgba(255, 215, 225, 0.65);
+      --input-bg: rgba(255, 255, 255, 0.95);
+      --input-border: rgba(185, 5, 44, 0.32);
+      --player-card-bg: rgba(255, 255, 255, 0.95);
+      --player-card-border: rgba(185, 5, 44, 0.2);
+      --player-card-border-hover: rgba(185, 5, 44, 0.34);
+      --player-card-shadow: 0 12px 24px rgba(185, 5, 44, 0.18);
+      --player-card-glow: radial-gradient(circle at center, rgba(185, 5, 44, 0.18), transparent 60%);
+      --player-card-img-border: rgba(185, 5, 44, 0.25);
+      --player-card-img-shadow: 0 12px 20px rgba(185, 5, 44, 0.2);
+      --empty-border: rgba(185, 5, 44, 0.32);
+      --toggle-shadow: 0 12px 18px rgba(185, 5, 44, 0.18);
     }
 
     * {
@@ -31,14 +89,12 @@
     body {
       min-height: 100vh;
       font-family: 'Karla', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background:
-        radial-gradient(circle at top right, rgba(185, 5, 44, 0.35), transparent 40%),
-        radial-gradient(circle at 18% 12%, rgba(255, 67, 97, 0.22), transparent 42%),
-        linear-gradient(140deg, #050203 0%, #140208 38%, #040102 100%);
+      background: var(--body-background);
       color: var(--text);
       display: flex;
       justify-content: center;
       padding: 48px 16px 80px;
+      transition: background 220ms ease, color 180ms ease;
     }
 
     main {
@@ -48,8 +104,8 @@
     }
 
     header.hero {
-      background: linear-gradient(120deg, rgba(12, 1, 4, 0.9), rgba(35, 0, 10, 0.86));
-      border: 1px solid rgba(255, 67, 97, 0.25);
+      background: var(--hero-background);
+      border: 1px solid var(--hero-border);
       border-radius: var(--radius);
       padding: 42px clamp(24px, 6vw, 60px);
       position: relative;
@@ -116,8 +172,8 @@
     }
 
     .hero .cta a.secondary {
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 67, 97, 0.2);
+      background: var(--secondary-cta-bg);
+      border: 1px solid var(--secondary-cta-border);
       box-shadow: none;
     }
 
@@ -129,7 +185,7 @@
     section {
       background: var(--bg-panel);
       border-radius: var(--radius);
-      border: 1px solid rgba(255, 67, 97, 0.18);
+      border: 1px solid var(--panel-border);
       padding: clamp(24px, 5vw, 40px);
       box-shadow: var(--shadow);
     }
@@ -157,7 +213,7 @@
     .detail-card {
       background: var(--bg-panel-solid);
       border-radius: var(--radius);
-      border: 1px solid rgba(255, 67, 97, 0.2);
+      border: 1px solid var(--detail-border);
       padding: 20px;
       display: grid;
       gap: 8px;
@@ -191,8 +247,8 @@
       margin-top: 12px;
       padding: 12px;
       border-radius: calc(var(--radius) - 6px);
-      background: rgba(255, 255, 255, 0.04);
-      border: 1px solid rgba(255, 67, 97, 0.18);
+      background: var(--avatar-bg);
+      border: 1px solid var(--avatar-border);
       display: flex;
       align-items: center;
       gap: 16px;
@@ -200,8 +256,8 @@
     }
 
     .avatar-preview[data-state="error"] {
-      border-color: rgba(255, 105, 130, 0.5);
-      background: rgba(255, 67, 97, 0.08);
+      border-color: var(--avatar-error-border);
+      background: var(--avatar-error-bg);
     }
 
     .avatar-preview figure {
@@ -249,8 +305,8 @@
       width: 100%;
       padding: 14px 16px;
       border-radius: 14px;
-      border: 1px solid rgba(255, 67, 97, 0.28);
-      background: rgba(255, 255, 255, 0.06);
+      border: 1px solid var(--input-border);
+      background: var(--input-bg);
       color: var(--text);
       font-size: 1rem;
       transition: border 150ms ease, transform 150ms ease;
@@ -295,9 +351,9 @@
     }
 
     .player-card {
-      background: rgba(255, 255, 255, 0.03);
+      background: var(--player-card-bg);
       border-radius: clamp(14px, 3vw, 24px);
-      border: 1px solid rgba(255, 67, 97, 0.22);
+      border: 1px solid var(--player-card-border);
       padding: 20px;
       display: grid;
       gap: 14px;
@@ -316,14 +372,14 @@
       top: -60px;
       right: -50px;
       border-radius: 50%;
-      background: radial-gradient(circle at center, rgba(255, 67, 97, 0.25), transparent 60%);
+      background: var(--player-card-glow);
       pointer-events: none;
       transition: transform 180ms ease;
     }
 
     .player-card:hover {
       transform: translateY(-4px);
-      border-color: rgba(255, 67, 97, 0.4);
+      border-color: var(--player-card-border-hover);
     }
 
     .player-card:hover::before {
@@ -335,8 +391,8 @@
       aspect-ratio: 1;
       object-fit: cover;
       border-radius: clamp(12px, 3vw, 20px);
-      border: 1px solid rgba(255, 67, 97, 0.3);
-      box-shadow: 0 12px 26px rgba(185, 5, 44, 0.32);
+      border: 1px solid var(--player-card-img-border);
+      box-shadow: var(--player-card-img-shadow);
     }
 
     .player-card h3 {
@@ -366,7 +422,7 @@
       border-radius: var(--radius);
       padding: 32px;
       text-align: center;
-      border: 1px dashed rgba(255, 67, 97, 0.35);
+      border: 1px dashed var(--empty-border);
       color: var(--muted);
       font-style: italic;
     }
@@ -375,6 +431,43 @@
       text-align: center;
       color: var(--muted);
       font-size: 0.85rem;
+    }
+
+    .theme-toggle {
+      position: fixed;
+      top: 24px;
+      right: 24px;
+      z-index: 1000;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 999px;
+      border: 1px solid var(--panel-border);
+      background: var(--bg-panel);
+      color: var(--text);
+      font-family: 'Unbounded', sans-serif;
+      letter-spacing: 0.08em;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: var(--toggle-shadow);
+      transition: transform 150ms ease, box-shadow 200ms ease, background 180ms ease, border-color 180ms ease;
+    }
+
+    .theme-toggle:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow);
+    }
+
+    .theme-toggle:focus-visible {
+      outline: 2px solid var(--accent-soft);
+      outline-offset: 3px;
+    }
+
+    .theme-toggle__icon {
+      font-size: 1rem;
+      line-height: 1;
     }
 
     @media (max-width: 720px) {
@@ -386,10 +479,19 @@
         flex-direction: column;
         align-items: flex-start;
       }
+
+      .theme-toggle {
+        top: 16px;
+        right: 16px;
+      }
     }
   </style>
 </head>
-<body>
+<body data-theme="dark">
+  <button class="theme-toggle" type="button" aria-pressed="false" aria-label="Switch to light mode">
+    <span class="theme-toggle__icon" aria-hidden="true">🌙</span>
+    <span class="theme-toggle__label">Light Mode</span>
+  </button>
   <main>
     <header class="hero">
       <h1>Crimson Chronicle</h1>
@@ -501,6 +603,9 @@
     const avatarPreview = document.getElementById('avatar-preview');
     const avatarPreviewImage = document.getElementById('avatar-preview-image');
     const avatarPreviewMessage = document.getElementById('avatar-preview-message');
+    const themeToggle = document.querySelector('.theme-toggle');
+    const prefersDarkMode = window.matchMedia ? window.matchMedia('(prefers-color-scheme: dark)') : { matches: true };
+    const THEME_STORAGE_KEY = 'crimson-chronicle-theme';
 
     let pollIntervalId = null;
     const isHttpContext = /^https?:$/i.test(window.location.protocol);
@@ -767,12 +872,86 @@
       }
     }
 
+    function updateThemeToggle(currentTheme) {
+      if (!themeToggle) return;
+      const isLight = currentTheme === 'light';
+      const nextTheme = isLight ? 'dark' : 'light';
+      const icon = themeToggle.querySelector('.theme-toggle__icon');
+      const label = themeToggle.querySelector('.theme-toggle__label');
+      themeToggle.setAttribute('aria-pressed', String(isLight));
+      themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+      if (icon) {
+        icon.textContent = isLight ? '🌞' : '🌙';
+      }
+      if (label) {
+        label.textContent = `${nextTheme.charAt(0).toUpperCase()}${nextTheme.slice(1)} Mode`;
+      }
+    }
+
+    function applyTheme(theme) {
+      const normalized = theme === 'light' ? 'light' : 'dark';
+      document.body.dataset.theme = normalized;
+      updateThemeToggle(normalized);
+    }
+
+    function getStoredTheme() {
+      try {
+        return localStorage.getItem(THEME_STORAGE_KEY);
+      } catch (error) {
+        console.warn('Unable to read stored theme preference.', error);
+        return null;
+      }
+    }
+
+    function storeTheme(theme) {
+      try {
+        localStorage.setItem(THEME_STORAGE_KEY, theme);
+      } catch (error) {
+        console.warn('Unable to store theme preference.', error);
+      }
+    }
+
+    function initializeTheme() {
+      const storedTheme = getStoredTheme();
+      const preferredTheme = storedTheme === 'light' || storedTheme === 'dark'
+        ? storedTheme
+        : (prefersDarkMode.matches ? 'dark' : 'light');
+      applyTheme(preferredTheme);
+    }
+
+    function toggleTheme() {
+      const currentTheme = document.body.dataset.theme === 'light' ? 'light' : 'dark';
+      const nextTheme = currentTheme === 'light' ? 'dark' : 'light';
+      applyTheme(nextTheme);
+      storeTheme(nextTheme);
+    }
+
     form.addEventListener('submit', submitPlayer);
 
     if (avatarInput) {
       avatarInput.addEventListener('input', updateAvatarPreview);
       avatarInput.addEventListener('change', updateAvatarPreview);
       updateAvatarPreview();
+    }
+
+    if (themeToggle) {
+      themeToggle.addEventListener('click', toggleTheme);
+      initializeTheme();
+
+      const handlePreferenceChange = event => {
+        const storedTheme = getStoredTheme();
+        if (storedTheme !== 'light' && storedTheme !== 'dark') {
+          applyTheme(event.matches ? 'dark' : 'light');
+        }
+      };
+
+      if (typeof prefersDarkMode.addEventListener === 'function') {
+        prefersDarkMode.addEventListener('change', handlePreferenceChange);
+      } else if (typeof prefersDarkMode.addListener === 'function') {
+        prefersDarkMode.addListener(handlePreferenceChange);
+      }
+    } else {
+      initializeTheme();
     }
 
     restartPolling();
