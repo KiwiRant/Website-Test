@@ -438,7 +438,7 @@
       <div class="details-grid">
         <article class="detail-card">
           <h3>1. Craft Your Token</h3>
-          <p>Forge a striking profile portrait in your favourite art tool. Save it to your device so you can upload it here.</p>
+          <p>Forge a striking profile portrait in your favourite art tool e.g. <a href="https://lexica.art/" target="_blank" rel="noreferrer">Lexica</a>. Save it to your device so you can upload it here.</p>
         </article>
         <article class="detail-card">
           <h3>2. Link Your Character</h3>
@@ -497,7 +497,6 @@
     </section>
 
     <footer>
-      Powered by Cloudflare Workers &amp; D1 · Deploy via GitHub for painless updates
     </footer>
   </main>
 
@@ -732,7 +731,7 @@
         if (!response.ok) throw new Error('Network response was not ok');
         const players = await response.json();
 
-        setWorkerStatus('Connected to the roster database.', 'connected');
+        setWorkerStatus('', 'connected');
         renderPlayers(players);
       } catch (error) {
         console.warn('Falling back to sample data:', error);
