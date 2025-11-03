@@ -873,6 +873,15 @@
       }
     }
 
+    const MODE_LABELS = {
+      dark: 'Dark Mode',
+      light: 'Daniel Mode'
+    };
+
+    function getModeLabel(themeKey) {
+      return MODE_LABELS[themeKey] || `${themeKey.charAt(0).toUpperCase()}${themeKey.slice(1)} Mode`;
+    }
+
     function updateThemeToggle(currentTheme) {
       if (!themeToggle) return;
       const isLight = currentTheme === 'light';
@@ -880,12 +889,13 @@
       const icon = themeToggle.querySelector('.theme-toggle__icon');
       const label = themeToggle.querySelector('.theme-toggle__label');
       themeToggle.setAttribute('aria-pressed', String(isLight));
-      themeToggle.setAttribute('aria-label', `Switch to ${nextTheme} mode`);
+      const nextThemeLabel = getModeLabel(nextTheme);
+      themeToggle.setAttribute('aria-label', `Switch to ${nextThemeLabel}`);
       if (icon) {
         icon.textContent = isLight ? '🌞' : '🌙';
       }
       if (label) {
-        label.textContent = `${nextTheme.charAt(0).toUpperCase()}${nextTheme.slice(1)} Mode`;
+        label.textContent = nextThemeLabel;
       }
     }
 
