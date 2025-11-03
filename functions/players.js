@@ -5,6 +5,20 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "Content-Type"
 };
 
+async function ensurePlayersTable(db) {
+  await db.prepare(
+    `CREATE TABLE IF NOT EXISTS players (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      character TEXT NOT NULL,
+      sheet TEXT NOT NULL,
+      avatar TEXT NOT NULL,
+      notes TEXT,
+      created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+    )`
+  ).run();
+}
+
 function jsonResponse(data, init = {}) {
   const headers = {
     "Content-Type": "application/json",
@@ -21,6 +35,8 @@ export async function onRequestOptions() {
 
 export async function onRequestGet({ env }) {
   try {
+    await ensurePlayersTable(env.DB);
+
     const { results } = await env.DB.prepare(
       "SELECT * FROM players ORDER BY created_at ASC"
     ).all();
@@ -35,6 +51,8 @@ export async function onRequestGet({ env }) {
 export async function onRequestPost({ request, env }) {
   try {
     const data = await request.json();
+
+    await ensurePlayersTable(env.DB);
 
     const requiredFields = ["name", "character", "sheet", "avatar"];
     const missingField = requiredFields.find((field) => !data[field]);
