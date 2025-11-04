@@ -205,6 +205,44 @@
       margin-bottom: 22px;
     }
 
+    .setup-guide {
+      display: grid;
+      gap: 18px;
+    }
+
+    .setup-guide ul {
+      display: grid;
+      gap: 12px;
+      padding-left: 1.2rem;
+      color: var(--muted);
+      line-height: 1.7;
+    }
+
+    .setup-guide li strong {
+      color: var(--text);
+      font-weight: 600;
+    }
+
+    .setup-note {
+      border-radius: calc(var(--radius) - 6px);
+      border: 1px solid var(--detail-border);
+      background: var(--bg-panel-solid);
+      padding: 16px 18px;
+      font-weight: 600;
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+    }
+
+    .setup-note span {
+      color: var(--accent-soft);
+      font-family: 'Unbounded', sans-serif;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-top: 2px;
+    }
+
     .details-grid {
       display: grid;
       gap: 18px;
@@ -556,6 +594,21 @@
         </div>
         <button type="submit">Add to the War Table</button>
       </form>
+    </section>
+
+    <section id="setup-guide" class="setup-guide">
+      <h2>Basic Setup Guide</h2>
+      <p class="lead">Leave every builder option at its default value except for the toggles below. That way every hero slots into the Crimson Chronicle without a hitch.</p>
+      <ul>
+        <li><strong>Sources:</strong> Deselect <em>Homebrew</em> and <em>Legacy/Noncore</em> so only official material stays active.</li>
+        <li><strong>Use Prerequisites:</strong> Uncheck <em>Multiclass Requirements</em> to keep the path open for experimental builds.</li>
+        <li><strong>Encumbrance Type:</strong> Switch to <em>No Encumbrance</em> for a more heroic carry capacity.</li>
+        <li><strong>Character Privacy:</strong> Set to <em>Public</em> so the war table can review your full sheet.</li>
+      </ul>
+      <div class="setup-note">
+        <span>Reminder</span>
+        <p>All characters should arrive at <strong>Level 3</strong> before stepping into the Chronicle.</p>
+      </div>
     </section>
 
     <section id="roster">
